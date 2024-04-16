@@ -38,6 +38,7 @@ List of checks:
 - [Contexts and special functions availability](#ctx-spfunc-availability)
 - [Deprecated workflow commands](#check-deprecated-workflow-commands)
 - [Conditions always evaluated to true at `if:`](#if-cond-always-true)
+- [Action metadata syntax validation](#action-metadata-syntax)
 
 Note that actionlint focuses on catching mistakes in workflow files. If you want some general code style checks, please consider
 using a general YAML checker like [yamllint][].
@@ -553,7 +554,7 @@ outputs:
     description: some value returned from this action
 
 runs:
-  using: 'node14'
+  using: 'node20'
   main: 'index.js'
 ```
 
@@ -677,6 +678,8 @@ steps:
   - run: echo ${{ matrix.foo }}
   # matrix.bar is array<any> type value
   - run: echo ${{ matrix.bar[0] }}
+  # ERROR: Array cannot be evaluated as string
+  - run: echo ${{ matrix.bar }}
 ```
 
 <a name="check-contextual-needs-object"></a>
@@ -830,6 +833,26 @@ false positives can be avoided by showing the shell name explicitly. It is also 
   run: Get-Content -Path xxx\yyy.txt
   if: ${{ matrix.os == 'windows-latest' }}
   shell: pwsh
+```
+
+When you want to control shellcheck behavior, [`SHELLCHECK_OPTS` environment variable][shellcheck-env-var] is useful.
+
+From command line:
+
+```sh
+# Enable some optional rules
+SHELLCHECK_OPTS='--enable=avoid-nullary-conditions' actionlint
+
+# Disable some rules
+SHELLCHECK_OPTS='--exclude=SC2129' actionlint
+```
+
+On GitHub Actions:
+
+```yaml
+- run: actionlint
+  env:
+    SHELLCHECK_OPTS: --exclude=SC2129
 ```
 
 <a name="check-pyflakes-integ"></a>
@@ -1628,7 +1651,7 @@ inputs:
     required: false
 
 runs:
-  using: 'node14'
+  using: 'node20'
   main: 'index.js'
 ```
 
@@ -2635,6 +2658,96 @@ works as intended.
 actionlint checks all `if:` conditions in workflow and reports error when some condition is always evaluated to true due to extra
 characters around `${{ }}`.
 
+<a name="action-metadata-syntax"></a>
+## Action metadata syntax validation
+
+Example workflow input:
+
+```yaml
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      # actionlint checks an action when it is actually used in a workflow
+      - uses: ./.github/actions/my-invalid-action
+```
+
+Example action metadata:
+
+```yaml
+# .github/actions/my-invalid-action/action.yml
+
+name: 'My action'
+author: '...'
+# ERROR: 'description' section is required
+
+branding:
+  # ERROR: Invalid icon name
+  icon: dog
+  # ERROR: Unsupported icon color
+  color: black
+
+runs:
+  # ERROR: Node.js runtime version is too old
+  using: 'node14'
+  # ERROR: The source file being run by this action does not exist
+  main: 'this-file-does-not-exist.js'
+  # ERROR: 'env' configuration is only allowed for Docker actions
+  env:
+    SOME_VAR: SOME_VALUE
+```
+
+Output:
+
+```
+action_metadata_syntax_validation.yaml:8:15: description is required in metadata of "My action" action at "path/to/.github/actions/my-invalid-action/action.yml" [action]
+  |
+8 |       - uses: ./.github/actions/my-invalid-action
+  |               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+action_metadata_syntax_validation.yaml:8:15: incorrect icon name "dog" at branding.icon in metadata of "My action" action at "path/to/.github/actions/my-invalid-action/action.yml". see the official document to know the exhaustive list of supported icons: https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions#brandingicon [action]
+  |
+8 |       - uses: ./.github/actions/my-invalid-action
+  |               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+action_metadata_syntax_validation.yaml:8:15: incorrect color "black" at branding.icon in metadata of "My action" action at "path/to/.github/actions/my-invalid-action/action.yml". see the official document to know the exhaustive list of supported colors: https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions#brandingcolor [action]
+  |
+8 |       - uses: ./.github/actions/my-invalid-action
+  |               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+action_metadata_syntax_validation.yaml:8:15: invalid runner name "node14" at runs.using in "My action" action defined at "path/to/.github/actions/my-invalid-action". valid runners are "composite", "docker", "node16", and "node20". see https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions#runs [action]
+  |
+8 |       - uses: ./.github/actions/my-invalid-action
+  |               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+action_metadata_syntax_validation.yaml:8:15: file "this-file-does-not-exist.js" does not exist in "path/to/.github/actions/my-invalid-action". it is specified at "main" key in "runs" section in "My action" action [action]
+  |
+8 |       - uses: ./.github/actions/my-invalid-action
+  |               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+action_metadata_syntax_validation.yaml:8:15: "env" is not allowed in "runs" section because "My action" is a JavaScript action. the action is defined at "path/to/.github/actions/my-invalid-action" [action]
+  |
+8 |       - uses: ./.github/actions/my-invalid-action
+  |               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
+
+All actions require a metadata file `action.yml` or `aciton.yaml`. The syntax is defined in [the official document][action-metadata-doc].
+
+actionlint checks metadata files used in workflows and reports errors when they are not following the syntax.
+
+- `name:`, `description:`, `runs:` sections are required
+- Runner name at `using:` is one of `composite`, `docker`, `node16`, `node20`
+- Keys under `runs:` section are correct. Required/Valid keys are different depending on the type of action; Docker action or
+  Composite action or JavaScript action (e.g. `image:` is required for Docker action).
+- Files specified in some keys under `runs` are existing. For example, JavaScript action defines a script file path for
+  entrypoint at `main:`.
+- Icon name at `icon:` in `branding:` section is correct. Supported icon names are listed in
+  [the official document][branding-icons-doc].
+- Icon color at `color:` in `branding:` section is correct. Supported icon colors are white, yellow, blue, green, orange, red,
+  purple, or gray-dark.
+
+actionlint checks action metadata files which are used by workflows. Currently it is not supported to specify `action.yml`
+directly via command line arguments.
+
+Note that `steps` in Composite action's metadata is not checked at this point. It will be supported in the future.
+
 ---
 
 [Installation](install.md) | [Usage](usage.md) | [Configuration](config.md) | [Go API](api.md) | [References](reference.md)
@@ -2650,6 +2763,7 @@ characters around `${{ }}`.
 [SC2194]: https://github.com/koalaman/shellcheck/wiki/SC2194
 [SC2154]: https://github.com/koalaman/shellcheck/wiki/SC2154
 [SC2157]: https://github.com/koalaman/shellcheck/wiki/SC2157
+[shellcheck-env-var]: https://github.com/koalaman/shellcheck/wiki/Integration#environment-variables
 [pyflakes]: https://github.com/PyCQA/pyflakes
 [expr-doc]: https://docs.github.com/en/actions/learn-github-actions/expressions
 [contexts-doc]: https://docs.github.com/en/actions/learn-github-actions/contexts
@@ -2687,3 +2801,5 @@ characters around `${{ }}`.
 [deprecate-set-output-save-state]: https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
 [deprecate-set-env-add-path]: https://github.blog/changelog/2020-10-01-github-actions-deprecating-set-env-and-add-path-commands/
 [workflow-commands-doc]: https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions
+[action-metadata-doc]: https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions
+[branding-icons-doc]: https://github.com/github/docs/blob/main/content/actions/creating-actions/metadata-syntax-for-github-actions.md#exhaustive-list-of-all-currently-supported-icons

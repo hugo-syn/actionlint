@@ -5,26 +5,30 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic" // Note: atomic.Bool was added at Go 1.19
 	"testing"
 	"time"
 )
 
-func testStartEchoCommand(t *testing.T, proc *concurrentProcess, done *bool) {
-	*done = false
+func testStartEchoCommand(t *testing.T, proc *concurrentProcess, done *atomic.Bool) {
+	t.Helper()
+
+	done.Store(false)
 	echo := testSkipIfNoCommand(t, proc, "echo")
 	echo.run([]string{}, "", func(b []byte, err error) error {
 		if err != nil {
 			t.Error(err)
 			return err
 		}
-		*done = true
+		done.Store(true)
 		return nil
 	})
 	// This function does not wait the command finishes
 }
 
 func testSkipIfNoCommand(t *testing.T, p *concurrentProcess, cmd string) *externalCommand {
-	c, err := p.newCommandRunner(cmd)
+	t.Helper()
+	c, err := p.newCommandRunner(cmd, false)
 	if err != nil {
 		t.Skipf("%s command is necessary to run this test: %s", cmd, err)
 	}
@@ -215,8 +219,8 @@ func TestProcessErrorCommandNotFound(t *testing.T) {
 		return nil
 	})
 
-	var echoDone bool
-	testStartEchoCommand(t, p, &echoDone)
+	echoDone := &atomic.Bool{}
+	testStartEchoCommand(t, p, echoDone)
 
 	err := c.wait()
 	if err == nil || !strings.Contains(err.Error(), "yay! error found!") {
@@ -225,7 +229,7 @@ func TestProcessErrorCommandNotFound(t *testing.T) {
 
 	p.wait()
 
-	if !echoDone {
+	if !echoDone.Load() {
 		t.Fatal("a command following the error did not run")
 	}
 }
@@ -242,8 +246,8 @@ func TestProcessErrorInCallback(t *testing.T) {
 		return fmt.Errorf("dummy error")
 	})
 
-	var echoDone bool
-	testStartEchoCommand(t, p, &echoDone)
+	echoDone := &atomic.Bool{}
+	testStartEchoCommand(t, p, echoDone)
 
 	err := echo.wait()
 	if err == nil || err.Error() != "dummy error" {
@@ -252,7 +256,7 @@ func TestProcessErrorInCallback(t *testing.T) {
 
 	p.wait()
 
-	if !echoDone {
+	if !echoDone.Load() {
 		t.Fatal("a command following the error did not run")
 	}
 }
@@ -272,8 +276,8 @@ func TestProcessErrorLinterFailed(t *testing.T) {
 		return nil
 	})
 
-	var echoDone bool
-	testStartEchoCommand(t, p, &echoDone)
+	echoDone := &atomic.Bool{}
+	testStartEchoCommand(t, p, echoDone)
 
 	err := ls.wait()
 	if err == nil {
@@ -286,7 +290,84 @@ func TestProcessErrorLinterFailed(t *testing.T) {
 
 	p.wait()
 
-	if !echoDone {
+	if !echoDone.Load() {
 		t.Fatal("a command following the error did not run")
+	}
+}
+
+func TestProcessRunConcurrentlyAndWait(t *testing.T) {
+	p := newConcurrentProcess(2)
+	echo := testSkipIfNoCommand(t, p, "echo")
+
+	c := make(chan struct{})
+	for i := 0; i < 3; i++ {
+		go func() {
+			for i := 0; i < 5; i++ {
+				echo.run(nil, "", func(b []byte, err error) error {
+					return err
+				})
+			}
+			c <- struct{}{}
+		}()
+	}
+
+	for i := 0; i < 3; i++ {
+		<-c
+	}
+
+	p.wait()
+}
+
+func TestProcessCombineStdoutAndStderr(t *testing.T) {
+	p := newConcurrentProcess(1)
+	bash := testSkipIfNoCommand(t, p, "bash")
+	bash.combineOutput = true
+	script := "echo 'hello stdout'; echo 'hello stderr' >&2"
+	done := make(chan string)
+
+	bash.run([]string{"-c", script}, "", func(b []byte, err error) error {
+		if err != nil {
+			t.Fatal(err)
+			return err
+		}
+		done <- string(b)
+		return nil
+	})
+
+	out := <-done
+	if err := bash.wait(); err != nil {
+		t.Fatal(err)
+	}
+	p.wait()
+
+	if !strings.Contains(out, "hello stdout") {
+		t.Errorf("stdout was not captured: %q", out)
+	}
+	if !strings.Contains(out, "hello stderr") {
+		t.Errorf("stderr was not captured: %q", out)
+	}
+}
+
+func TestProcessCommandExitStatusNonZero(t *testing.T) {
+	p := newConcurrentProcess(1)
+	bash := testSkipIfNoCommand(t, p, "false")
+	done := make(chan error)
+
+	bash.run([]string{}, "", func(b []byte, err error) error {
+		done <- err
+		return nil
+	})
+
+	err := <-done
+	if err := bash.wait(); err != nil {
+		t.Fatal(err)
+	}
+	p.wait()
+	if err == nil {
+		t.Fatal("Error did not happen")
+	}
+	msg := err.Error()
+	if !strings.Contains(msg, "exited with status 1") {
+		t.Fatalf("Unexpected error happened: %q", msg)
 	}
 }

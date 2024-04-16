@@ -272,7 +272,7 @@ and pyflakes).
 Available tags are:
 
 - `actionlint:latest`: Latest stable version of actionlint. This image is recommended.
-- `actionlint:{version}`: Specific version of actionlint. (e.g. `actionlint:1.6.1`)
+- `actionlint:{version}`: Specific version of actionlint. (e.g. `actionlint:1.6.27`)
 
 Just run the image with `docker run`:
 
@@ -366,7 +366,7 @@ Add this to your `.pre-commit-config.yaml` in your repository:
 ---
 repos:
   - repo: https://github.com/rhysd/actionlint
-    rev: main
+    rev: v1.6.27
     hooks:
       - id: actionlint
 ```
@@ -383,6 +383,27 @@ As alternatives to `actionlint` hook, `actionlint-docker` or `actionlint-system`
 
 [Linter extension][vsc-extension] for [VS Code][vscode] is available. The extension automatically detects `.github/workflows`
 directory, runs `actionlint` command, and reports errors in the code editor while editing workflow files.
+
+### Emacs
+
+Plugins for both [Flycheck][emacs-flycheck] and [Flymake][emacs-flymake] are available via [MELPA][emacs-melpa].
+
+Their respective repositories are [flycheck-actionlint][emacs-flycheck-extension] and [flymake-actionlint][emacs-flymake-extension].
+
+### Vim and Neovim
+
+[nvim-lint][] supports actionlint on Neovim. The plugin automatically and asynchronously runs actionlint and notifies errors
+on the fly when you edit GitHub Actions CI workflows. Please read the plugin's documentation for more details.
+
+[ALE][vim-ale] supports actionlint on Vim and Neovim. Similar to nvim-lint, The plugin automatically and asynchronously runs
+actionlint and notifies errors on the fly when you edit GitHub Actions CI workflows. Please read the plugin's documentation for
+more details.
+
+### Pulsar Edit
+
+A [Linter package][pulsar-linter] for [Pulsar Edit][pulsar] is available. The package automatically detects a `workflows`
+directory, executes the `actionlint` command on any detected GitHub Actions files within the directory, and reports returned
+information in the code editor display tab while editing workflow files.
 
 ### Nova
 
@@ -404,7 +425,7 @@ trunk check enable actionlint
 or if you'd like a specific version:
 
 ```bash
-trunk check enable actionlint@1.6.23
+trunk check enable actionlint@1.6.27
 ```
 
 or modify `.trunk/trunk.yaml` in your repo to contain:
@@ -412,7 +433,7 @@ or modify `.trunk/trunk.yaml` in your repo to contain:
 ```yaml
 lint:
   enabled:
-    - actionlint@1.6.23
+    - actionlint@1.6.27
 ```
 
 Then just run:
@@ -449,6 +470,15 @@ You can also see actionlint issues inline in VS Code via the [Trunk VS Code exte
 [docker-image]: https://hub.docker.com/r/rhysd/actionlint
 [vsc-extension]: https://marketplace.visualstudio.com/items?itemName=arahata.linter-actionlint
 [vscode]: https://code.visualstudio.com/
+[emacs-melpa]: https://melpa.org/
+[emacs-flymake]: https://www.gnu.org/software/emacs/manual/html_node/flymake/
+[emacs-flymake-extension]: https://github.com/ROCKTAKEY/flymake-actionlint
+[emacs-flycheck]: https://www.flycheck.org/
+[emacs-flycheck-extension]: https://github.com/tirimia/flycheck-actionlint
+[nvim-lint]: https://github.com/mfussenegger/nvim-lint
+[vim-ale]: https://github.com/dense-analysis/ale
+[pulsar]: https://pulsar-edit.dev/
+[pulsar-linter]: https://web.pulsar-edit.dev/packages/linter-github-actions
 [nova-extension]: https://extensions.panic.com/extensions/org.netwrk/org.netwrk.actionlint/
 [nova]: https://nova.app
 [trunk-io]: https://docs.trunk.io/docs
