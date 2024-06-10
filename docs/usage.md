@@ -176,7 +176,7 @@ line is 21, col is 20, message is "property \"platform\" is not defined in objec
 In `{{ }}` placeholder, input can be piped and action can be used to transform texts. In above example, the message is piped with
 `|` and transformed with `printf "%q"`.
 
-Note that special characters escaped with back slash like `\n` in the format string are automatically unespcaed.
+Note that special characters escaped with backslash like `\n` in the format string are automatically unescaped.
 
 ### Exit status
 
@@ -207,7 +207,7 @@ jobs:
   actionlint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Download actionlint
         id: get_actionlint
         run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
@@ -246,7 +246,7 @@ jobs:
   actionlint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Check workflow files
         uses: docker://rhysd/actionlint:latest
         with:
@@ -255,7 +255,7 @@ jobs:
 
 ## Online playground
 
-Thanks to WebAssembly, actionlint playground is available on your browser. It never sends any data to outside of your browser.
+Thanks to WebAssembly, actionlint playground is available on your browser. It never sends any data to outside your browser.
 
 https://rhysd.github.io/actionlint/
 
@@ -272,7 +272,7 @@ and pyflakes).
 Available tags are:
 
 - `actionlint:latest`: Latest stable version of actionlint. This image is recommended.
-- `actionlint:{version}`: Specific version of actionlint. (e.g. `actionlint:1.6.27`)
+- `actionlint:{version}`: Specific version of actionlint. (e.g. `actionlint:1.7.1`)
 
 Just run the image with `docker run`:
 
@@ -321,7 +321,7 @@ jobs:
   actionlint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: reviewdog/action-actionlint@v1
 ```
 
@@ -366,7 +366,7 @@ Add this to your `.pre-commit-config.yaml` in your repository:
 ---
 repos:
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.6.27
+    rev: v1.7.1
     hooks:
       - id: actionlint
 ```
@@ -425,15 +425,15 @@ trunk check enable actionlint
 or if you'd like a specific version:
 
 ```bash
-trunk check enable actionlint@1.6.27
+trunk check enable actionlint@1.7.1
 ```
 
-or modify `.trunk/trunk.yaml` in your repo to contain:
+or modify `.trunk/trunk.yaml` in your repository to contain:
 
 ```yaml
 lint:
   enabled:
-    - actionlint@1.6.27
+    - actionlint@1.7.1
 ```
 
 Then just run:

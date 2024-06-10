@@ -11,7 +11,7 @@ const (
 	compatInvalid                   = 0
 	compatUbuntu2004 runnerOSCompat = 1 << iota
 	compatUbuntu2204
-	compatMacOS1015
+	compatUbuntu2404
 	compatMacOS110
 	compatMacOS120
 	compatMacOS120L
@@ -22,7 +22,6 @@ const (
 	compatMacOS140
 	compatMacOS140L
 	compatMacOS140XL
-	compatWindows2016
 	compatWindows2019
 	compatWindows2022
 )
@@ -33,11 +32,11 @@ var allGitHubHostedRunnerLabels = []string{
 	"windows-latest-8-cores",
 	"windows-2022",
 	"windows-2019",
-	"windows-2016",
 	"ubuntu-latest",
 	"ubuntu-latest-4-cores",
 	"ubuntu-latest-8-cores",
 	"ubuntu-latest-16-cores",
+	"ubuntu-24.04",
 	"ubuntu-22.04",
 	"ubuntu-20.04",
 	"macos-latest",
@@ -61,7 +60,6 @@ var allGitHubHostedRunnerLabels = []string{
 	"macos-12.0",
 	"macos-11",
 	"macos-11.0",
-	"macos-10.15",
 }
 
 // https://docs.github.com/en/actions/hosting-your-own-runners/using-self-hosted-runners-in-a-workflow#using-default-labels-to-route-jobs
@@ -84,8 +82,13 @@ var defaultRunnerOSCompats = map[string]runnerOSCompat{
 	"ubuntu-latest-4-cores":  compatUbuntu2204,
 	"ubuntu-latest-8-cores":  compatUbuntu2204,
 	"ubuntu-latest-16-cores": compatUbuntu2204,
+	"ubuntu-24.04":           compatUbuntu2404,
 	"ubuntu-22.04":           compatUbuntu2204,
 	"ubuntu-20.04":           compatUbuntu2004,
+	"macos-latest-xl":        compatMacOS140XL,
+	"macos-latest-xlarge":    compatMacOS140XL,
+	"macos-latest-large":     compatMacOS140L,
+	"macos-latest":           compatMacOS140,
 	"macos-14-xl":            compatMacOS140XL,
 	"macos-14-xlarge":        compatMacOS140XL,
 	"macos-14-large":         compatMacOS140L,
@@ -96,10 +99,6 @@ var defaultRunnerOSCompats = map[string]runnerOSCompat{
 	"macos-13-large":         compatMacOS130L,
 	"macos-13":               compatMacOS130,
 	"macos-13.0":             compatMacOS130,
-	"macos-latest-xl":        compatMacOS120XL,
-	"macos-latest-xlarge":    compatMacOS120XL,
-	"macos-latest-large":     compatMacOS120L,
-	"macos-latest":           compatMacOS120,
 	"macos-12-xl":            compatMacOS120XL,
 	"macos-12-xlarge":        compatMacOS120XL,
 	"macos-12-large":         compatMacOS120L,
@@ -107,15 +106,13 @@ var defaultRunnerOSCompats = map[string]runnerOSCompat{
 	"macos-12.0":             compatMacOS120,
 	"macos-11":               compatMacOS110,
 	"macos-11.0":             compatMacOS110,
-	"macos-10.15":            compatMacOS1015,
 	"windows-latest":         compatWindows2022,
 	"windows-latest-8-cores": compatWindows2022,
 	"windows-2022":           compatWindows2022,
 	"windows-2019":           compatWindows2019,
-	"windows-2016":           compatWindows2016,
-	"linux":                  compatUbuntu2204 | compatUbuntu2004, // Note: "linux" does not always indicate Ubuntu. It might be Fedora or Arch or ...
-	"macos":                  compatMacOS130 | compatMacOS130L | compatMacOS130XL | compatMacOS120 | compatMacOS120L | compatMacOS120XL | compatMacOS110 | compatMacOS1015,
-	"windows":                compatWindows2022 | compatWindows2019 | compatWindows2016,
+	"linux":                  compatUbuntu2404 | compatUbuntu2204 | compatUbuntu2004, // Note: "linux" does not always indicate Ubuntu. It might be Fedora or Arch or ...
+	"macos":                  compatMacOS140 | compatMacOS140L | compatMacOS140XL | compatMacOS130 | compatMacOS130L | compatMacOS130XL | compatMacOS120 | compatMacOS120L | compatMacOS120XL | compatMacOS110,
+	"windows":                compatWindows2022 | compatWindows2019,
 }
 
 // RuleRunnerLabel is a rule to check runner label like "ubuntu-latest". There are two types of

@@ -193,23 +193,50 @@ func TestWriteGoFile(t *testing.T) {
 }
 
 func TestFetchRemoteYAML(t *testing.T) {
-	f := filepath.Join("testdata", "registry", "fetch.json")
+	tests := []struct {
+		registry string
+		want     string
+	}{
+		{"fetch.json", "fetched.go"},
+		{"outdated.json", "outdated.go"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.registry, func(t *testing.T) {
+			f := filepath.Join("testdata", "registry", tc.registry)
+			stdout := &bytes.Buffer{}
+			stderr := io.Discard
+			status := newGen(stdout, stderr, io.Discard).run([]string{"test", "-r", f})
+			if status != 0 {
+				t.Fatal("exit status is non-zero:", status)
+			}
+
+			b, err := os.ReadFile(filepath.Join("testdata", "go", tc.want))
+			if err != nil {
+				panic(err)
+			}
+			want := string(b)
+			have := stdout.String()
+
+			if !cmp.Equal(want, have) {
+				t.Fatalf("fetched JSONL data does not match: %s", cmp.Diff(want, have))
+			}
+		})
+	}
+}
+
+func TestWriteOutdatedActionAsJSONL(t *testing.T) {
+	f := filepath.Join("testdata", "registry", "outdated.json")
 	stdout := &bytes.Buffer{}
 	stderr := io.Discard
-	status := newGen(stdout, stderr, io.Discard).run([]string{"test", "-r", f})
+	status := newGen(stdout, stderr, io.Discard).run([]string{"test", "-r", f, "-f", "jsonl"})
 	if status != 0 {
 		t.Fatal("exit status is non-zero:", status)
 	}
 
-	b, err := os.ReadFile(filepath.Join("testdata", "go", "fetched.go"))
-	if err != nil {
-		panic(err)
-	}
-	want := string(b)
-	have := stdout.String()
-
-	if !cmp.Equal(want, have) {
-		t.Fatalf("fetched JSONL data does not match: %s", cmp.Diff(want, have))
+	out := stdout.String()
+	if len(out) > 0 {
+		t.Fatalf("empty output was expected but got %q", out)
 	}
 }
 

@@ -42,27 +42,23 @@
     },
     {
         "slug": "actions-rs/audit-check",
-        "tags": ["v1"],
-        "next": "v2"
+        "tags": ["v1"]
     },
     {
         "slug": "actions-rs/cargo",
-        "tags": ["v1"],
-        "next": "v2"
+        "tags": ["v1"]
+    },
+    {
+        "slug": "actions-rs/clippy-check",
+        "tags": ["v1"]
+    },
+    {
+        "slug": "actions-rs/toolchain",
+        "tags": ["v1"]
     },
     {
         "slug": "dtolnay/rust-toolchain",
         "tags": ["stable", "beta", "nightly"]
-    },
-    {
-        "slug": "actions-rs/clippy-check",
-        "tags": ["v1"],
-        "next": "v2"
-    },
-    {
-        "slug": "actions-rs/toolchain",
-        "tags": ["v1"],
-        "next": "v2"
     },
     {
         "slug": "actions/cache",
@@ -181,8 +177,8 @@
     },
     {
         "slug": "dawidd6/action-download-artifact",
-        "tags": ["v2", "v3"],
-        "next": "v4"
+        "tags": ["v2", "v3", "v5"],
+        "next": "v6"
     },
     {
         "slug": "dawidd6/action-send-mail",
@@ -260,8 +256,8 @@
     },
     {
         "slug": "github/super-linter",
-        "tags": ["v3", "v4", "v5"],
-        "next": "v6"
+        "tags": ["v3", "v4", "v5", "v6"],
+        "next": "v7"
     },
     {
         "slug": "githubocto/flat",
@@ -270,8 +266,8 @@
     },
     {
         "slug": "golangci/golangci-lint-action",
-        "tags": ["v1", "v2", "v3", "v4"],
-        "next": "v5"
+        "tags": ["v1", "v2", "v3", "v4", "v5", "v6"],
+        "next": "v7"
     },
     {
         "slug": "google-github-actions/auth",
@@ -296,13 +292,13 @@
     },
     {
         "slug": "goreleaser/goreleaser-action",
-        "tags": ["v1", "v2", "v3", "v4", "v5"],
-        "next": "v6"
+        "tags": ["v1", "v2", "v3", "v4", "v5", "v6"],
+        "next": "v7"
     },
     {
         "slug": "gradle/wrapper-validation-action",
-        "tags": ["v1", "v2"],
-        "next": "v3"
+        "tags": ["v1", "v2", "v3"],
+        "next": "v4"
     },
     {
         "slug": "haskell/actions",
@@ -347,8 +343,8 @@
     },
     {
         "slug": "peaceiris/actions-gh-pages",
-        "tags": ["v2", "v3"],
-        "next": "v4"
+        "tags": ["v2", "v3", "v4"],
+        "next": "v5"
     },
     {
         "slug": "peter-evans/create-pull-request",
@@ -460,5 +456,20 @@
         "slug": "peaceiris/actions-hugo",
         "tags": ["v3"],
         "next": "v4"
+    },
+    {
+        "slug": "actions/attest-build-provenance",
+        "tags": ["v1"],
+        "next": "v2"
+    },
+    {
+        "slug": "actions/add-to-project",
+        "tags": ["v1.0.1"],
+        "next": "v2.0.0"
+    },
+    {
+        "slug": "octokit/graphql-action",
+        "tags": ["v2.x"],
+        "next": "v3.x"
     }
 ]

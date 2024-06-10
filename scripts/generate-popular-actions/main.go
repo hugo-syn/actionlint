@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/rhysd/actionlint"
@@ -60,6 +61,16 @@ func (r *registry) spec(tag string) string {
 
 //go:embed popular_actions.json
 var defaultPopularActionsJSON []byte
+
+const minNodeRunnerVersion = 16
+
+func isOutdatedRunner(r string) bool {
+	if !strings.HasPrefix(r, "node") {
+		return false
+	}
+	v, err := strconv.ParseUint(r[len("node"):], 10, 8)
+	return err == nil && v < minNodeRunnerVersion
+}
 
 type gen struct {
 	stdout      io.Writer
@@ -169,6 +180,17 @@ func (g *gen) fetchRemote() (map[string]*actionlint.ActionMetadata, error) {
 			close(done)
 			return nil, f.err
 		}
+
+		// Workaround for #416.
+		// Once this PR is merged, remove this `if` statement and regenerate popular_actions.go.
+		// https://github.com/dorny/paths-filter/pull/236
+		if f.spec == "dorny/paths-filter@v3" {
+			f.meta.Inputs["predicate-quantifier"] = &actionlint.ActionMetadataInput{
+				Name:     "predicate-quantifier",
+				Required: false,
+			}
+		}
+
 		ret[f.spec] = f.meta
 	}
 
@@ -179,6 +201,10 @@ func (g *gen) fetchRemote() (map[string]*actionlint.ActionMetadata, error) {
 func (g *gen) writeJSONL(out io.Writer, actions map[string]*actionlint.ActionMetadata) error {
 	enc := json.NewEncoder(out)
 	for spec, meta := range actions {
+		if isOutdatedRunner(meta.Runs.Using) {
+			g.log.Printf("Ignore outdated action %q since runner is %q", spec, meta.Runs.Using)
+			continue
+		}
 		j := actionOutput{spec, meta}
 		if err := enc.Encode(&j); err != nil {
 			return fmt.Errorf("could not encode action %q data into JSON: %w", spec, err)
@@ -205,8 +231,14 @@ var PopularActions = map[string]*ActionMetadata{
 	}
 	sort.Strings(specs)
 
+	outdated := []string{}
 	for _, spec := range specs {
 		meta := actions[spec]
+		if isOutdatedRunner(meta.Runs.Using) {
+			outdated = append(outdated, spec)
+			continue
+		}
+
 		fmt.Fprintf(b, "%q: {\n", spec)
 		fmt.Fprintf(b, "Name: %q,\n", meta.Name)
 
@@ -253,6 +285,14 @@ var PopularActions = map[string]*ActionMetadata{
 
 	fmt.Fprintln(b, "}")
 
+	fmt.Fprintln(b, `// OutdatedPopularActionSpecs is a spec set of known outdated popular actions. The word 'outdated'
+// means that the runner used by the action is no longer available such as "node12".
+var OutdatedPopularActionSpecs = map[string]struct{}{`)
+	for _, s := range outdated {
+		fmt.Fprintf(b, "%q: {},\n", s)
+	}
+	fmt.Fprintln(b, "}")
+
 	// Format the generated source with checking Go syntax
 	gen := b.Bytes()
 	src, err := format.Source(gen)
@@ -264,7 +304,7 @@ var PopularActions = map[string]*ActionMetadata{
 		return fmt.Errorf("could not output generated Go source to stdout: %w", err)
 	}
 
-	g.log.Printf("Wrote %d action metadata as Go", len(actions))
+	g.log.Printf("Wrote %d action metadata and %d outdated action specs as Go", len(actions)-len(outdated), len(outdated))
 	return nil
 }
 
