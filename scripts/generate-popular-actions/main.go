@@ -62,7 +62,7 @@ func (r *registry) spec(tag string) string {
 //go:embed popular_actions.json
 var defaultPopularActionsJSON []byte
 
-const minNodeRunnerVersion = 16
+const minNodeRunnerVersion = 20
 
 func isOutdatedRunner(r string) bool {
 	if !strings.HasPrefix(r, "node") {
@@ -191,6 +191,19 @@ func (g *gen) fetchRemote() (map[string]*actionlint.ActionMetadata, error) {
 			}
 		}
 
+		// Workaround for #442.
+		// Once this issue is fixed or the `download-artifact@v3" is completely obsolete (due to unsupported runner),
+		// remove this `if` statement and regenerate popular_actions.go.
+		// https://github.com/actions/download-artifact/issues/355
+		if f.spec == "actions/download-artifact@v3" {
+			if f.meta.Outputs == nil {
+				f.meta.Outputs = actionlint.ActionMetadataOutputs{}
+			}
+			f.meta.Outputs["download-path"] = &actionlint.ActionMetadataOutput{
+				Name: "download-path",
+			}
+		}
+
 		ret[f.spec] = f.meta
 	}
 
@@ -286,7 +299,7 @@ var PopularActions = map[string]*ActionMetadata{
 	fmt.Fprintln(b, "}")
 
 	fmt.Fprintln(b, `// OutdatedPopularActionSpecs is a spec set of known outdated popular actions. The word 'outdated'
-// means that the runner used by the action is no longer available such as "node12".
+// means that the runner used by the action is no longer available such as "node12", "node16".
 var OutdatedPopularActionSpecs = map[string]struct{}{`)
 	for _, s := range outdated {
 		fmt.Fprintf(b, "%q: {},\n", s)

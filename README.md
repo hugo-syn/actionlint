@@ -17,7 +17,7 @@ Features:
 - **Other several useful checks**; [glob syntax][filter-pattern-doc] validation, dependencies check for `needs:`,
   runner label validation, cron syntax validation, ...
 
-See [the full list](docs/checks.md) of checks done by actionlint.
+See [the full list][checks] of checks done by actionlint.
 
 <img src="https://github.com/rhysd/ss/blob/master/actionlint/main.gif?raw=true" alt="actionlint reports 7 errors" width="806" height="492"/>
 
@@ -60,7 +60,7 @@ test.yaml:5:11: character '\' is invalid for branch and tag names. only special 
   |
 5 |       - 'v\d+'
   |           ^~~~
-test.yaml:10:28: label "linux-latest" is unknown. available labels are "windows-latest", "windows-2022", "windows-2019", "windows-2016", "ubuntu-latest", "ubuntu-22.04", "ubuntu-20.04", "ubuntu-18.04", "macos-latest", "macos-12", "macos-12.0", "macos-11", "macos-11.0", "macos-10.15", "self-hosted", "x64", "arm", "arm64", "linux", "macos", "windows". if it is a custom label for self-hosted runner, set list of labels in actionlint.yaml config file [runner-label]
+test.yaml:10:28: label "linux-latest" is unknown. available labels are "windows-latest", "windows-latest-8-cores", "windows-2022", "windows-2019", "ubuntu-latest", "ubuntu-latest-4-cores", "ubuntu-latest-8-cores", "ubuntu-latest-16-cores", "ubuntu-24.04", "ubuntu-22.04", "ubuntu-20.04", "macos-latest", "macos-latest-xl", "macos-latest-xlarge", "macos-latest-large", "macos-15-xlarge", "macos-15-large", "macos-15", "macos-14-xl", "macos-14-xlarge", "macos-14-large", "macos-14", "macos-13-xl", "macos-13-xlarge", "macos-13-large", "macos-13", "macos-12-xl", "macos-12-xlarge", "macos-12-large", "macos-12", "self-hosted", "x64", "arm", "arm64", "linux", "macos", "windows". if it is a custom label for self-hosted runner, set list of labels in actionlint.yaml config file [runner-label]
    |
 10 |         os: [macos-latest, linux-latest]
    |                            ^~~~~~~~~~~~~
@@ -118,7 +118,7 @@ See [the usage document](docs/usage.md) for more details.
 
 ## Documents
 
-- [Checks](docs/checks.md): Full list of all checks done by actionlint with example inputs, outputs, and playground links.
+- [Checks][checks]: Full list of all checks done by actionlint with example inputs, outputs, and playground links.
 - [Installation](docs/install.md): Installation instructions. Prebuilt binaries, a Docker image, building from
   source, a download script (for CI), supports by several package managers are available.
 - [Usage](docs/usage.md): How to use `actionlint` command locally or on GitHub Actions, the online playground, an official Docker
@@ -151,3 +151,4 @@ actionlint is distributed under [the MIT license](./LICENSE.txt).
 [script-injection-doc]: https://docs.github.com/en/actions/learn-github-actions/security-hardening-for-github-actions#understanding-the-risk-of-script-injections
 [issue-form]: https://github.com/rhysd/actionlint/issues/new
 [releases]: https://github.com/rhysd/actionlint/releases
+[checks]: https://github.com/rhysd/actionlint/blob/v1.7.3/docs/checks.md

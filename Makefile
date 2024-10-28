@@ -1,4 +1,4 @@
-SRCS := $(filter-out %_test.go, $(wildcard *.go cmd/actionlint/*.go)) go.mod go.sum
+SRCS := $(filter-out %_test.go, $(wildcard *.go cmd/actionlint/*.go)) go.mod go.sum .git-hooks/.timestamp
 TESTS := $(filter %_test.go, $(wildcard *.go))
 TOOL := $(filter %_test.go, $(wildcard scripts/*/*.go))
 TESTDATA := $(wildcard \
@@ -15,7 +15,7 @@ GO_GEN_SRCS := scripts/generate-popular-actions/main.go \
 				scripts/generate-webhook-events/main.go \
 				scripts/generate-availability/main.go
 
-all: clean build test
+all: build test lint
 
 .testtimestamp: $(TESTS) $(SRCS) $(TESTDATA) $(TOOL)
 	go test ./...
@@ -26,6 +26,7 @@ t test: .testtimestamp
 .staticchecktimestamp: $(TESTS) $(SRCS) $(TOOL)
 	staticcheck ./...
 	GOOS=js GOARCH=wasm staticcheck ./playground
+	go run ./scripts/check-checks -quiet ./docs/checks.md
 	touch .staticchecktimestamp
 
 l lint: .staticchecktimestamp
@@ -69,5 +70,9 @@ scripts/generate-actionlint-matcher/test/want.json: actionlint
 c clean:
 	rm -f ./actionlint ./.testtimestamp ./.staticchecktimestamp ./actionlint_fuzz-fuzz.zip ./man/actionlint.1 ./man/actionlint.1.html ./actionlint-workflow-ast
 	rm -rf ./corpus ./crashers
+
+.git-hooks/.timestamp: .git-hooks/pre-push
+	[ -z "${CI}" ] && git config core.hooksPath .git-hooks || true
+	touch .git-hooks/.timestamp
 
 .PHONY: all test clean build lint fuzz man bench b t c l
